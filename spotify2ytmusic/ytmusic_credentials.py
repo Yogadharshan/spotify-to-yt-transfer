@@ -1,6 +1,7 @@
 import ytmusicapi
 
 import os
+import re
 
 
 def setup_ytmusic_with_raw_headers(
@@ -22,7 +23,20 @@ def setup_ytmusic_with_raw_headers(
 
     # Read the raw headers from the file
     with open(input_file, "r") as file:
-        headers_raw = file.read()
+        lines = file.readlines()
+
+    # Drop the leading HTTP request line (e.g. "POST /youtubei/... HTTP/2")
+    # and any blank lines. ytmusicapi's parser tracks a "remembered key" for
+    # chrome's multi-line header format; the request line has no ": " so it
+    # gets stuck in that state, and a trailing blank line then flushes it
+    # into the output as a bogus header with an empty value, which YouTube
+    # rejects with a 400.
+    lines = [
+        line
+        for line in lines
+        if line.strip() and not re.match(r"^(GET|POST|PUT|DELETE) .* HTTP/\d", line)
+    ]
+    headers_raw = "".join(lines)
 
     # Use ytmusicapi.setup to process headers and save the credentials
     config_headers = ytmusicapi.setup(
