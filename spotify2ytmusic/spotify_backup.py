@@ -106,6 +106,14 @@ class SpotifyAPI:
             }
         )
 
+    def _construct_url(self, url, params):
+        """Construct a full API URL."""
+        if not url.startswith(self.BASE_URL):
+            url = self.BASE_URL + url
+        if params:
+            url += ("&" if "?" in url else "?") + urllib.parse.urlencode(params)
+        return url
+
     def _create_request(self, url):
         """Create an authenticated request."""
         req = urllib.request.Request(url)
